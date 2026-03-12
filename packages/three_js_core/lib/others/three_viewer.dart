@@ -8,6 +8,8 @@ import 'package:three_js_core/renderers/index.dart';
 import 'package:three_js_core/three_js_core.dart' as core;
 import 'package:three_js_math/three_js_math.dart';
 
+bool get _isWindowsRuntime => !_isWeb && Platform.isWindows;
+
 class Settings{
   Settings({
     this.useSourceTexture = false,
@@ -369,7 +371,7 @@ class ThreeJS with WidgetsBindingObserver{
           alpha: settings.alpha,
           antialias: settings.antialias,
           customRenderer: !settings.useSourceTexture,
-          useSurfaceProducer: !Platform.isWindows
+          useSurfaceProducer: !_isWindowsRuntime
         )
       );
     }
