@@ -8,6 +8,7 @@ import 'package:three_js_core/renderers/index.dart';
 import 'package:three_js_core/three_js_core.dart' as core;
 import 'package:three_js_math/three_js_math.dart';
 
+bool get _isWeb => kIsWeb;
 bool get _isWindowsRuntime => !_isWeb && Platform.isWindows;
 
 class Settings{
