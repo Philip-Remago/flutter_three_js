@@ -371,7 +371,7 @@ class ThreeJS with WidgetsBindingObserver{
           alpha: settings.alpha,
           antialias: settings.antialias,
           customRenderer: !settings.useSourceTexture,
-          useSurfaceProducer: !_isWindowsRuntime
+          useSurfaceProducer: kIsWeb || !_isWindowsRuntime
         )
       );
     }
