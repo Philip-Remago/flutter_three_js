@@ -11,12 +11,12 @@ import 'package:three_js_math/three_js_math.dart';
 bool get _isWeb => kIsWeb;
 bool get _isWindowsRuntime => !_isWeb && Platform.isWindows;
 
-class Settings{
+class Settings {
   Settings({
     this.useSourceTexture = false,
     this.enableShadowMap = true,
     this.autoClear = true,
-    Map<String,dynamic>? renderOptions,
+    Map<String, dynamic>? renderOptions,
     this.animate = true,
     this.alpha = false,
     this.autoClearDepth = true,
@@ -42,14 +42,11 @@ class Settings{
     this.failIfMajorPerformanceCaveat = false,
     this.reverseDepthBuffer = false,
     this.precision = core.Precision.highp,
-    this.screenResolution
-  }){
-    this.renderOptions = renderOptions ?? {
-      "format": RGBAFormat,
-      "samples": 4
-    };
+    this.screenResolution,
+  }) {
+    this.renderOptions = renderOptions ?? {"format": RGBAFormat, "samples": 4};
   }
-  
+
   bool premultipliedAlpha;
   bool preserveDrawingBuffer;
   PowerPreference powerPreference;
@@ -65,7 +62,7 @@ class Settings{
   bool antialias;
   WebXRManager Function(WebGLRenderer renderer, dynamic gl)? xr;
   double? screenResolution;
-  
+
   bool animate;
   bool useSourceTexture;
   bool enableShadowMap;
@@ -73,7 +70,7 @@ class Settings{
   bool autoClearDepth;
   bool autoClearStencil;
   bool localClippingEnabled;
-  late Map<String,dynamic> renderOptions;
+  late Map<String, dynamic> renderOptions;
   List<Plane> clippingPlanes;
   int outputEncoding;
   ColorSpace colorSpace;
@@ -83,11 +80,11 @@ class Settings{
 }
 
 /// threeJs utility class. If you want to learn how to connect cannon.js with js, please look at the examples/threejs_* instead.
-class ThreeJS with WidgetsBindingObserver{
+class ThreeJS with WidgetsBindingObserver {
   void Function() onSetupComplete;
   ThreeJS({
     Settings? settings,
-    required this.onSetupComplete, 
+    required this.onSetupComplete,
     required this.setup,
     this.rendererUpdate,
     this.postProcessor,
@@ -95,8 +92,8 @@ class ThreeJS with WidgetsBindingObserver{
     Size? size,
     core.WebGLRenderer? renderer,
     this.renderNumber = 0,
-    this.loadingWidget
-  }){
+    this.loadingWidget,
+  }) {
     this.settings = settings ?? Settings();
     _resolution = this.settings.screenResolution;
     _fixedSize = size;
@@ -110,7 +107,8 @@ class ThreeJS with WidgetsBindingObserver{
   Widget? loadingWidget;
   Size? _fixedSize;
   late final Settings settings;
-  final GlobalKey<core.PeripheralsState> globalKey = GlobalKey<core.PeripheralsState>();
+  final GlobalKey<core.PeripheralsState> globalKey =
+      GlobalKey<core.PeripheralsState>();
   core.PeripheralsState get domElement => globalKey.currentState!;
 
   bool visible = true;
@@ -132,7 +130,7 @@ class ThreeJS with WidgetsBindingObserver{
   Size? screenSize;
   double? _resolution;
   double get dpr => _resolution ?? 1.0;
-  void setResolution(double newResolution){
+  void setResolution(double newResolution) {
     _resolution = newResolution;
   }
 
@@ -149,8 +147,14 @@ class ThreeJS with WidgetsBindingObserver{
   void Function()? rendererUpdate;
   void Function(Size newSize)? windowResizeUpdate;
   void Function([double? dt])? postProcessor;
-  Future<void> Function(core.Scene,core.Camera,FlutterAngleTexture,[double? dt])? customRenderer;
-  Future<void> Function(BuildContext) onWindowResize = (context) async{};
+  Future<void> Function(
+    core.Scene,
+    core.Camera,
+    FlutterAngleTexture, [
+    double? dt,
+  ])?
+  customRenderer;
+  Future<void> Function(BuildContext) onWindowResize = (context) async {};
   FutureOr<void> Function()? setup;
   List<Function(double dt)> events = [];
   List<Function()> disposeEvents = [];
@@ -168,10 +172,19 @@ class ThreeJS with WidgetsBindingObserver{
   static final FlutterAngle _sharedAngle = FlutterAngle();
   FlutterAngle? angle = _sharedAngle;
 
-  void addAnimationEvent(Function(double dt) event){
+  /// Serializes EGL init + texture creation across all ThreeJS instances.
+  /// On Windows the native plugin (`createTexture`/`createTextureAngle`)
+  /// and the EGL context setup are NOT safe to run concurrently — doing
+  /// so triggers `abort()` in the C++ runtime. Chaining every init onto
+  /// this future guarantees only one platform-channel/GL bring-up runs
+  /// at a time.
+  static Future<void> _initLock = Future<void>.value();
+
+  void addAnimationEvent(Function(double dt) event) {
     events.add(event);
   }
-  void toDispose(Function() event){
+
+  void toDispose(Function() event) {
     disposeEvents.add(event);
   }
 
@@ -179,15 +192,19 @@ class ThreeJS with WidgetsBindingObserver{
   void didChangeMetrics() {
     if (_disposed) return;
     _debounceTimer?.cancel(); // Clear existing timer
-    _debounceTimer = Timer(Duration(milliseconds: 300+renderNumber*100), () { // Set a new timer
-      if (_context != null && _context!.mounted) {
-        _onWindowResize(_context!);
-      }
-    });
+    _debounceTimer = Timer(
+      Duration(milliseconds: 300 + renderNumber * 100),
+      () {
+        // Set a new timer
+        if (_context != null && _context!.mounted) {
+          _onWindowResize(_context!);
+        }
+      },
+    );
   }
 
-  void dispose(){
-    if(_disposed) return;
+  void dispose() {
+    if (_disposed) return;
     _disposed = true;
     _debounceTimer?.cancel(); // Cancel timer if active
     _debounceTimer = null;
@@ -199,10 +216,10 @@ class ThreeJS with WidgetsBindingObserver{
     renderTarget?.dispose();
     renderTarget = null;
     scene.dispose();
-    for(final event in disposeEvents){
+    for (final event in disposeEvents) {
       event.call();
     }
-    
+
     camera.dispose();
     events.clear();
     disposeEvents.clear();
@@ -227,7 +244,7 @@ class ThreeJS with WidgetsBindingObserver{
     setup = null;
   }
 
-  void initSize(BuildContext context){
+  void initSize(BuildContext context) {
     if (screenSize != null) {
       return;
     }
@@ -238,22 +255,23 @@ class ThreeJS with WidgetsBindingObserver{
     screenSize = _fixedSize ?? mqd.size;
     _resolution ??= mqd.devicePixelRatio;
 
-    Future.delayed(Duration(milliseconds: renderNumber*100), () async{
+    Future.delayed(Duration(milliseconds: renderNumber * 100), () async {
       await initPlatformState();
     });
   }
-  
+
   Future<void> animate(Duration duration) async {
     if (!mounted || _disposed || updating || !isVisibleOnScreen || !visible) {
       return;
     }
     _updating = true;
     double dt = clock.getDelta();
-    
-    if(settings.animate){
-      await (customRenderer?.call(scene,camera,texture!,dt) ?? render(scene,camera,texture!,dt));
-      if(!pause){
-        for(int i = 0; i < events.length;i++){
+
+    if (settings.animate) {
+      await (customRenderer?.call(scene, camera, texture!, dt) ??
+          render(scene, camera, texture!, dt));
+      if (!pause) {
+        for (int i = 0; i < events.length; i++) {
           events[i].call(dt);
         }
       }
@@ -261,30 +279,34 @@ class ThreeJS with WidgetsBindingObserver{
     _updating = false;
   }
 
-  Future<void> render([core.Scene? scene, core.Camera? camera, FlutterAngleTexture? texture, double? dt]) async{
+  Future<void> render([
+    core.Scene? scene,
+    core.Camera? camera,
+    FlutterAngleTexture? texture,
+    double? dt,
+  ]) async {
     scene ??= this.scene;
     camera ??= this.camera;
     texture ??= this.texture!;
-    
-    if(sourceTexture == null){
+
+    if (sourceTexture == null) {
       angle?.activateTexture(texture);
     }
-    rendererUpdate?.call(); 
-    if(postProcessor == null){
+    rendererUpdate?.call();
+    if (postProcessor == null) {
       renderer!.clear();
-      renderer!.setViewport(0,0,width,height);
+      renderer!.setViewport(0, 0, width, height);
       renderer!.render(scene, camera);
-    }
-    else{
+    } else {
       postProcessor?.call(dt);
     }
-    
-    if(sourceTexture != null){
+
+    if (sourceTexture != null) {
       angle?.activateTexture(texture);
     }
-    await angle?.updateTexture(texture,sourceTexture);
+    await angle?.updateTexture(texture, sourceTexture);
   }
-  
+
   void initRenderer() {
     WebGLRendererParameters options = WebGLRendererParameters(
       width: width,
@@ -305,7 +327,7 @@ class ThreeJS with WidgetsBindingObserver{
       reverseDepthBuffer: settings.reverseDepthBuffer,
       precision: settings.precision,
     );
-    
+
     renderer = core.WebGLRenderer(options);
     renderer!.setPixelRatio(_resolution!);
     renderer!.setSize(width, height, false);
@@ -314,8 +336,8 @@ class ThreeJS with WidgetsBindingObserver{
     renderer!.shadowMap.type = settings.shadowMapType;
     renderer!.autoClear = settings.autoClear;
     renderer!.setClearColor(
-      Color.fromHex32(settings.clearColor), 
-      settings.clearAlpha
+      Color.fromHex32(settings.clearColor),
+      settings.clearAlpha,
     );
     renderer!.autoClearDepth = settings.autoClearDepth;
     renderer!.autoClearStencil = settings.autoClearStencil;
@@ -326,23 +348,29 @@ class ThreeJS with WidgetsBindingObserver{
     renderer!.toneMapping = settings.toneMapping;
     renderer!.toneMappingExposure = settings.toneMappingExposure;
 
-    if(settings.useSourceTexture){
-      final core.WebGLRenderTargetOptions pars = core.WebGLRenderTargetOptions(settings.renderOptions);
-      renderTarget = core.WebGLRenderTarget((width * _resolution!).toInt(), (height * _resolution!).toInt(), pars);
+    if (settings.useSourceTexture) {
+      final core.WebGLRenderTargetOptions pars = core.WebGLRenderTargetOptions(
+        settings.renderOptions,
+      );
+      renderTarget = core.WebGLRenderTarget(
+        (width * _resolution!).toInt(),
+        (height * _resolution!).toInt(),
+        pars,
+      );
       renderer!.setRenderTarget(renderTarget);
       sourceTexture = renderer!.getRenderTargetGLTexture(renderTarget!);
     }
   }
-  
-  Future<void> _onWindowResize(BuildContext context) async{
+
+  Future<void> _onWindowResize(BuildContext context) async {
     if (_disposed) return;
     double dt = clock.getDelta();
     final mqd = MediaQuery.maybeOf(context);
     if (mqd == null) return;
-    if(_fixedSize == null && screenSize != mqd.size && texture != null){
+    if (_fixedSize == null && screenSize != mqd.size && texture != null) {
       screenSize = mqd.size;
 
-      if(settings.screenResolution == null){
+      if (settings.screenResolution == null) {
         _resolution = mqd.devicePixelRatio;
       }
 
@@ -354,20 +382,20 @@ class ThreeJS with WidgetsBindingObserver{
 
       await angle?.resize(texture!, options);
 
-      camera.aspect = width/height;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
 
       windowResizeUpdate?.call(screenSize!);
       renderer!.setSize(width, height);
 
-      if(postProcessor != null){
+      if (postProcessor != null) {
         postProcessor?.call(dt);
       }
-      render(scene,camera,texture!,dt);
+      render(scene, camera, texture!, dt);
     }
   }
 
-  Future<void> initScene() async{
+  Future<void> initScene() async {
     if (renderer == null) {
       initRenderer();
     }
@@ -379,20 +407,31 @@ class ThreeJS with WidgetsBindingObserver{
   }
 
   Future<void> initPlatformState() async {
-    if(texture == null){
-      await angle?.init();
-      
-      texture = await angle?.createTexture(      
-        AngleOptions(
-          width: width.toInt(), 
-          height: height.toInt(), 
-          dpr: _resolution!,
-          alpha: settings.alpha,
-          antialias: settings.antialias,
-          customRenderer: !settings.useSourceTexture,
-          useSurfaceProducer: kIsWeb || !_isWindowsRuntime
-        )
-      );
+    if (texture == null) {
+      // Chain onto the global init lock so only one ThreeJS instance is
+      // running EGL init / createTexture at any moment. Concurrent runs
+      // crash the Windows native plugin with abort().
+      final completer = Completer<void>();
+      final previous = _initLock;
+      _initLock = completer.future;
+      try {
+        await previous;
+        await angle?.init();
+
+        texture = await angle?.createTexture(
+          AngleOptions(
+            width: width.toInt(),
+            height: height.toInt(),
+            dpr: _resolution!,
+            alpha: settings.alpha,
+            antialias: settings.antialias,
+            customRenderer: !settings.useSourceTexture,
+            useSurfaceProducer: kIsWeb || !_isWindowsRuntime,
+          ),
+        );
+      } finally {
+        completer.complete();
+      }
     }
 
     console.info(texture?.toMap());
@@ -403,43 +442,56 @@ class ThreeJS with WidgetsBindingObserver{
   }
 
   Widget build() {
-    return  Builder(builder: (BuildContext context) {
-      initSize(context);
-      return core.Peripherals(
-        key: globalKey,
-        builder: (BuildContext context) {
-          return Container(
-            width: !visible?0:width,
-            height: !visible?0:height,
-            child: SizeChangedLayoutNotifier(
-              child: Builder(builder: (BuildContext context) {
-                if (kIsWeb) {
-                  return texture != null && mounted? HtmlElementView(viewType:texture!.textureId.toString()):loadingWidget ?? Container(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height,
-                    color: Theme.of(context).canvasColor,
-                    alignment: Alignment.center,
-                    child: const CircularProgressIndicator()
-                  );
-                } 
-                else {
-                  return texture != null && mounted?
-                    Transform.scale(
-                      scaleY: sourceTexture != null || Platform.isAndroid?1:-1,
-                      child:Texture(textureId: texture!.textureId)
-                    ):loadingWidget ?? Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height,
-                      color: Theme.of(context).canvasColor,
-                      alignment: Alignment.center,
-                      child: const CircularProgressIndicator()
-                    );
-                }
-              })
-            )
-          );
-        }
-      );
-    });
+    return Builder(
+      builder: (BuildContext context) {
+        initSize(context);
+        return core.Peripherals(
+          key: globalKey,
+          builder: (BuildContext context) {
+            return Container(
+              width: !visible ? 0 : width,
+              height: !visible ? 0 : height,
+              child: SizeChangedLayoutNotifier(
+                child: Builder(
+                  builder: (BuildContext context) {
+                    if (kIsWeb) {
+                      return texture != null && mounted
+                          ? HtmlElementView(
+                              viewType: texture!.textureId.toString(),
+                            )
+                          : loadingWidget ??
+                                Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: MediaQuery.of(context).size.height,
+                                  color: Theme.of(context).canvasColor,
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(),
+                                );
+                    } else {
+                      return texture != null && mounted
+                          ? Transform.scale(
+                              scaleY:
+                                  sourceTexture != null || Platform.isAndroid
+                                  ? 1
+                                  : -1,
+                              child: Texture(textureId: texture!.textureId),
+                            )
+                          : loadingWidget ??
+                                Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: MediaQuery.of(context).size.height,
+                                  color: Theme.of(context).canvasColor,
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(),
+                                );
+                    }
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }
