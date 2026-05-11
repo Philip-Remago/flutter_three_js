@@ -15,10 +15,7 @@ class WebGLBindingStates {
 
   bool forceUpdate = false;
 
-  WebGLBindingStates(
-    this.gl,
-    this.attributes,
-  ) {
+  WebGLBindingStates(this.gl, this.attributes) {
     maxVertexAttributes = gl.getParameter(WebGL.MAX_VERTEX_ATTRIBS);
     bindingStates = <int, dynamic>{};
     defaultState = createBindingState(null);
@@ -45,7 +42,6 @@ class WebGLBindingStates {
 
     if (updateBuffers) saveCache(object, geometry, program, index);
 
-
     if (index != null) {
       attributes.update(index, WebGL.ELEMENT_ARRAY_BUFFER);
     }
@@ -69,9 +65,10 @@ class WebGLBindingStates {
   void bindVertexArrayObject(VertexArrayObject? vao) {
     if (vao != null) {
       return gl.bindVertexArray(vao);
-    } 
-    else {
-      console.warning(" WebGLBindingStates.dart  bindVertexArrayObject VAO is null");
+    } else {
+      console.warning(
+        " WebGLBindingStates.dart  bindVertexArrayObject VAO is null",
+      );
       return;
     }
   }
@@ -80,11 +77,7 @@ class WebGLBindingStates {
     return gl.deleteVertexArray(vao);
   }
 
-  getBindingState(
-    BufferGeometry geometry,
-    program,
-    Material material,
-  ) {
+  getBindingState(BufferGeometry geometry, program, Material material) {
     final wireframe = (material.wireframe == true);
 
     Map<int, dynamic>? programMap = bindingStates[geometry.id];
@@ -101,7 +94,7 @@ class WebGLBindingStates {
       programMap[program.id] = stateMap;
     }
 
-     Map? state = stateMap[wireframe];
+    Map? state = stateMap[wireframe];
 
     if (state == null) {
       state = createBindingState(createVertexArrayObject());
@@ -133,11 +126,16 @@ class WebGLBindingStates {
       "attributeDivisors": attributeDivisors,
       "object": vao,
       "attributes": {},
-      "index": null
+      "index": null,
     };
   }
 
-  bool needsUpdate(Object3D object, BufferGeometry geometry, WebGLProgram program, BufferAttribute? index) {
+  bool needsUpdate(
+    Object3D object,
+    BufferGeometry geometry,
+    WebGLProgram program,
+    BufferAttribute? index,
+  ) {
     final cachedAttributes = currentState["attributes"];
     final geometryAttributes = geometry.attributes;
     int attributesNum = 0;
@@ -150,15 +148,19 @@ class WebGLBindingStates {
         BufferAttribute? geometryAttribute = geometryAttributes[name];
 
         if (geometryAttribute == null) {
-          if (name == 'instanceMatrix' && object.instanceMatrix != null) geometryAttribute = object.instanceMatrix;
-          if (name == 'instanceColor' && object.instanceColor != null) geometryAttribute = object.instanceColor;
+          if (name == 'instanceMatrix' && object.instanceMatrix != null)
+            geometryAttribute = object.instanceMatrix;
+          if (name == 'instanceColor' && object.instanceColor != null)
+            geometryAttribute = object.instanceColor;
         }
 
         if (cachedAttribute == null) return true;
 
         if (cachedAttribute["attribute"] != geometryAttribute) return true;
 
-        if (geometryAttribute != null && cachedAttribute["data"] != geometryAttribute.data) return true;
+        if (geometryAttribute != null &&
+            cachedAttribute["data"] != geometryAttribute.data)
+          return true;
 
         attributesNum++;
       }
@@ -169,7 +171,12 @@ class WebGLBindingStates {
     return false;
   }
 
-  void saveCache(object, BufferGeometry geometry, WebGLProgram program, BufferAttribute? index) {
+  void saveCache(
+    object,
+    BufferGeometry geometry,
+    WebGLProgram program,
+    BufferAttribute? index,
+  ) {
     final cache = {};
     final attributes = geometry.attributes;
     int attributesNum = 0;
@@ -183,8 +190,10 @@ class WebGLBindingStates {
         BufferAttribute? attribute = attributes[name];
 
         if (attribute == null) {
-          if (name == 'instanceMatrix' && object.instanceMatrix != null) attribute = object.instanceMatrix;
-          if (name == 'instanceColor' && object.instanceColor != null) attribute = object.instanceColor;
+          if (name == 'instanceMatrix' && object.instanceMatrix != null)
+            attribute = object.instanceMatrix;
+          if (name == 'instanceColor' && object.instanceColor != null)
+            attribute = object.instanceColor;
         }
 
         final data = {};
@@ -248,8 +257,16 @@ class WebGLBindingStates {
     }
   }
 
-  void vertexAttribPointer(int index, int size, int type, bool normalized, int stride, int offset, bool integer) {
-    if (integer){
+  void vertexAttribPointer(
+    int index,
+    int size,
+    int type,
+    bool normalized,
+    int stride,
+    int offset,
+    bool integer,
+  ) {
+    if (integer) {
       gl.vertexAttribIPointer(index, size, type, stride, offset);
     } else {
       gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
@@ -280,7 +297,9 @@ class WebGLBindingStates {
           if (name == 'instanceMatrix' && object is InstancedMesh) {
             geometryAttribute = object.instanceMatrix;
           }
-          if (name == 'instanceColor' && object is InstancedMesh && object.instanceColor != null) {
+          if (name == 'instanceColor' &&
+              object is InstancedMesh &&
+              object.instanceColor != null) {
             geometryAttribute = object.instanceColor;
           }
         }
@@ -294,7 +313,9 @@ class WebGLBindingStates {
           // TODO Attribute may not be available on context restore
 
           if (attribute == null) {
-            console.warning("WebGLBindingState setupVertexAttributes name: $name attribute == null ");
+            console.warning(
+              "WebGLBindingState setupVertexAttributes name: $name attribute == null ",
+            );
             continue;
           }
 
@@ -302,7 +323,9 @@ class WebGLBindingStates {
           final type = attribute["type"];
           final bytesPerElement = attribute["bytesPerElement"];
 
-          final integer = ( type == WebGL.INT || type == WebGL.UNSIGNED_INT) && geometryAttribute.gpuType == IntType;
+          final integer =
+              (type == WebGL.INT || type == WebGL.UNSIGNED_INT) &&
+              geometryAttribute.gpuType == IntType;
           if (geometryAttribute is InterleavedBufferAttribute) {
             final data = geometryAttribute.data;
             final stride = data?.stride;
@@ -310,14 +333,17 @@ class WebGLBindingStates {
 
             if (data != null && data is InstancedInterleavedBuffer) {
               for (int i = 0; i < programAttribute.locationSize; i++) {
-                enableAttributeAndDivisor(programAttribute.location.id + i, data.meshPerAttribute);
+                enableAttributeAndDivisor(
+                  programAttribute.location.id + i,
+                  data.meshPerAttribute,
+                );
               }
 
-              if (object is! InstancedMesh && geometry.maxInstanceCount == null) {
+              if (object is! InstancedMesh &&
+                  geometry.maxInstanceCount == null) {
                 geometry.maxInstanceCount = data.meshPerAttribute * data.count;
               }
-            } 
-            else {
+            } else {
               for (int i = 0; i < programAttribute.locationSize; i++) {
                 enableAttribute(programAttribute.location.id + i);
               }
@@ -332,19 +358,23 @@ class WebGLBindingStates {
                 type,
                 normalized,
                 (stride! * bytesPerElement).toInt(),
-                ((offset + (size ~/ programAttribute.locationSize) * i) * bytesPerElement).toInt(),
-                integer
+                ((offset + (size ~/ programAttribute.locationSize) * i) *
+                        bytesPerElement)
+                    .toInt(),
+                integer,
               );
             }
-          } 
-          else {
+          } else {
             if (geometryAttribute is InstancedBufferAttribute) {
               for (int i = 0; i < programAttribute.locationSize; i++) {
-                enableAttributeAndDivisor(programAttribute.location.id + i, geometryAttribute.meshPerAttribute);
+                enableAttributeAndDivisor(
+                  programAttribute.location.id + i,
+                  geometryAttribute.meshPerAttribute,
+                );
               }
-              geometry.maxInstanceCount ??= geometryAttribute.meshPerAttribute * geometryAttribute.count;
-            } 
-            else {
+              geometry.maxInstanceCount ??=
+                  geometryAttribute.meshPerAttribute * geometryAttribute.count;
+            } else {
               for (int i = 0; i < programAttribute.locationSize; i++) {
                 enableAttribute(programAttribute.location.id + i);
               }
@@ -353,18 +383,18 @@ class WebGLBindingStates {
             gl.bindBuffer(WebGL.ARRAY_BUFFER, buffer);
             for (int i = 0; i < programAttribute.locationSize; i++) {
               vertexAttribPointer(
-                programAttribute.location.id + i, 
-                size ~/ programAttribute.locationSize, 
+                programAttribute.location.id + i,
+                size ~/ programAttribute.locationSize,
                 type,
-                normalized, 
-                (size * bytesPerElement).toInt(), 
-                ((size ~/ programAttribute.locationSize) * i * bytesPerElement).toInt(),
-                integer
+                normalized,
+                (size * bytesPerElement).toInt(),
+                ((size ~/ programAttribute.locationSize) * i * bytesPerElement)
+                    .toInt(),
+                integer,
               );
             }
           }
-        } 
-        else if (materialDefaultAttributeValues != null) {
+        } else if (materialDefaultAttributeValues != null) {
           final value = materialDefaultAttributeValues[name];
 
           if (value != null) {
@@ -390,22 +420,22 @@ class WebGLBindingStates {
   }
 
   void dispose() {
-    if(_didDispose) return;
+    if (_didDispose) return;
     _didDispose = true;
     reset();
 
-    for ( final geometryId in bindingStates.keys ) {
-      final programMap = bindingStates[ geometryId ];
-      for ( final programId in programMap.keys ) {
-        final stateMap = programMap[ programId ];
-        for ( final wireframe in stateMap.keys) {
-          deleteVertexArrayObject( stateMap[ wireframe ]['object'] );
+    for (final geometryId in bindingStates.keys) {
+      final programMap = bindingStates[geometryId];
+      for (final programId in programMap.keys) {
+        final stateMap = programMap[programId];
+        for (final wireframe in stateMap.keys) {
+          deleteVertexArrayObject(stateMap[wireframe]['object']);
         }
         stateMap.clear();
       }
       programMap.clear();
     }
-    
+
     bindingStates.clear();
     attributes.dispose();
     defaultState.clear();
@@ -432,17 +462,17 @@ class WebGLBindingStates {
   void releaseStatesOfProgram(program) {
     console.info(" WebGLBindingStates releaseStatesOfProgram ");
 
-    for (final geometryId in bindingStates.keys ) {
-    	final programMap = bindingStates[ geometryId ];
+    for (final geometryId in bindingStates.keys) {
+      final programMap = bindingStates[geometryId];
 
-    	if ( programMap[ program.id ] == null ) continue;
-    	final stateMap = programMap[ program.id ];
+      if (programMap[program.id] == null) continue;
+      final stateMap = programMap[program.id];
 
-    	for ( final wireframe in stateMap.keys ) {
-    		deleteVertexArrayObject( stateMap[ wireframe ]['object'] );
-    	}
+      for (final wireframe in stateMap.keys) {
+        deleteVertexArrayObject(stateMap[wireframe]['object']);
+      }
       (stateMap as Map).clear();
-    	(programMap as Map).remove(program.id);
+      (programMap as Map).remove(program.id);
     }
   }
 

@@ -155,7 +155,18 @@ class ThreeJS with WidgetsBindingObserver{
   List<Function(double dt)> events = [];
   List<Function()> disposeEvents = [];
 
-  FlutterAngle? angle = FlutterAngle();
+  /// Shared singleton FlutterAngle. Each `FlutterAngle` instance creates
+  /// its own EGL context (via `eglCreateContext` + `eglMakeCurrent`) on
+  /// desktop platforms. When multiple `ThreeJS` instances coexist, the
+  /// LAST one to `init()` makes its context current, and every subsequent
+  /// GL call from any other `ThreeJS` instance silently runs on the wrong
+  /// context — manifesting on Windows as one viewer rendering into
+  /// another viewer's destination texture (so multiple viewers display
+  /// the same scene). Sharing a single FlutterAngle keeps a single EGL
+  /// context, single `_libOpenGLES`, and consistent `_activeFramebuffer`
+  /// bookkeeping across all instances.
+  static final FlutterAngle _sharedAngle = FlutterAngle();
+  FlutterAngle? angle = _sharedAngle;
 
   void addAnimationEvent(Function(double dt) event){
     events.add(event);
@@ -198,7 +209,14 @@ class ThreeJS with WidgetsBindingObserver{
 
     allNativeData.dispose();
 
-    angle?.dispose([texture]);
+    // Only delete this instance's texture; never dispose the shared
+    // FlutterAngle (other live ThreeJS instances depend on it).
+    if (texture != null) {
+      try {
+        angle?.deleteTexture(texture!);
+      } catch (_) {}
+    }
+    angle = null;
     loadingWidget = null;
     _fixedSize = null;
     screenSize = null;
