@@ -852,6 +852,13 @@ class WebGLRenderer {
     
     if (_isContextLost) return;
 
+    // When multiple ThreeJS instances share the same underlying Flutter GL
+    // context, each renderer's JS-side caches (current program, bound VAO,
+    // uniform locations, active texture units) get out of sync with the
+    // actual GL state after a sibling has rendered. Force a full reset so
+    // this renderer re-establishes its state from scratch every frame.
+    resetState();
+
     // update scene graph
     if (scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
 
