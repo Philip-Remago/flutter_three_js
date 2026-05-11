@@ -734,6 +734,42 @@ class WebGLState {
     stencilBuffer.reset();
   }
 
+  /// Invalidates only the JS-side state-tracking caches without issuing
+  /// any GL calls. Use this when multiple renderers share the same GL
+  /// context: it forces the next setX() calls to re-issue their state
+  /// (because the cache no longer matches the actual GL state set by a
+  /// sibling renderer), but it doesn't unbind framebuffers or programs.
+  void resetCache() {
+    enabledCapabilities = {};
+
+    currentTextureSlot = null;
+    currentBoundTextures = {};
+
+    currentProgram = null;
+
+    currentBlendingEnabled = false;
+    currentBlending = null;
+    currentBlendEquation = null;
+    currentBlendSrc = null;
+    currentBlendDst = null;
+    currentBlendEquationAlpha = null;
+    currentBlendSrcAlpha = null;
+    currentBlendDstAlpha = null;
+    currentPremultipledAlpha = false;
+
+    currentFlipSided = null;
+    currentCullFace = null;
+
+    currentLineWidth = null;
+
+    currentPolygonOffsetFactor = null;
+    currentPolygonOffsetUnits = null;
+
+    colorBuffer.reset();
+    depthBuffer.reset();
+    stencilBuffer.reset();
+  }
+
   void dispose(){
     if(_didDispose) return;
     _didDispose = true;

@@ -921,15 +921,15 @@ class WebGLRenderer {
 
     // When multiple ThreeJS instances share the same underlying Flutter GL
     // context, each renderer's JS-side caches (current program, bound VAO,
-    // uniform locations, active texture units) get out of sync with the
-    // actual GL state after a sibling has rendered. Invalidate just the
-    // tracked-state caches so we re-issue the correct GL state on the next
-    // setup call. We do NOT clear _currentRenderTarget here because the
-    // ThreeJS host already bound the destination texture before calling
-    // render(); resetState() would unbind it and the frame would render
-    // into the default framebuffer (invisible).
-    state.reset();
-    bindingStates.reset();
+    // uniform locations, active texture units, blend/depth/stencil state)
+    // get out of sync with the actual GL state after a sibling renders.
+    // Invalidate just the tracking caches so the next setX() calls in
+    // this render pass re-issue their state. We do NOT issue any GL calls
+    // here (no bindFramebuffer, no useProgram, no bindVertexArray) because
+    // the host has already bound the destination framebuffer via
+    // angle.activateTexture() and disrupting that would render to nothing.
+    state.resetCache();
+    bindingStates.resetCache();
 
     // update scene graph
     if (scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();

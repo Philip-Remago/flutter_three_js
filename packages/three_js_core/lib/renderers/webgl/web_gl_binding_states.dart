@@ -456,6 +456,16 @@ class WebGLBindingStates {
     bindVertexArrayObject(currentState["object"]);
   }
 
+  /// JS-side-only cache invalidation: forces the next [setup] call to
+  /// re-bind the VAO and re-upload attribute pointers, without issuing
+  /// any GL calls now. Used by [WebGLRenderer.render] to defend against
+  /// sibling renderers having mutated the actual GL state behind us.
+  void resetCache() {
+    resetDefaultState();
+    forceUpdate = true;
+    currentState = defaultState;
+  }
+
   // for backward-compatilibity
 
   void resetDefaultState() {
